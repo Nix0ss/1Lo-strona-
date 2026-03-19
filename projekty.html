@@ -1,73 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Projekty uczniów</title>
+<title>Projekty uczniów – Drukarka 3D</title>
+
+<style>
+body{
+font-family: Arial, sans-serif;
+background:#f4f6f9;
+margin:0;
+}
+
+.header{
+background:#1d4ed8;
+color:white;
+padding:20px;
+text-align:center;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+padding:30px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+margin-bottom:30px;
+}
+
+h2{
+margin-top:0;
+}
+
+input, textarea{
+width:100%;
+padding:10px;
+margin-top:8px;
+margin-bottom:15px;
+border:1px solid #ccc;
+border-radius:6px;
+font-size:14px;
+}
+
+button{
+background:#1d4ed8;
+color:white;
+border:none;
+padding:10px 20px;
+border-radius:6px;
+cursor:pointer;
+font-size:14px;
+}
+
+button:hover{
+background:#163ea8;
+}
+
+.project{
+border-bottom:1px solid #eee;
+padding:10px 0;
+}
+
+.project:last-child{
+border:none;
+}
+
+.download{
+color:#1d4ed8;
+text-decoration:none;
+font-weight:bold;
+}
+</style>
 </head>
 
 <body>
 
-<h1>Projekty uczniów – drukarka 3D</h1>
+<div class="header">
+<h1>Projekty uczniów – Drukarka 3D</h1>
+<p>Dodaj swój projekt do szkolnej drukarki 3D</p>
+</div>
 
-<form id="projektForm">
+<div class="container">
 
-Imię ucznia:<br>
-<input type="text" id="imie"><br><br>
+<div class="card">
+<h2>Dodaj projekt</h2>
 
-Nazwa projektu:<br>
-<input type="text" id="nazwa"><br><br>
+<input id="name" placeholder="Nazwa projektu">
+<textarea id="desc" placeholder="Opis projektu"></textarea>
+<input type="file" id="file">
 
-Plik STL:<br>
-<input type="file" id="plik"><br><br>
+<button onclick="addProject()">Dodaj projekt</button>
+</div>
 
-Opis projektu:<br>
-<textarea id="opis"></textarea><br><br>
-
-<button type="submit">Dodaj projekt</button>
-
-</form>
-
+<div class="card">
 <h2>Lista projektów</h2>
+<div id="projects"></div>
+</div>
 
-<ul id="listaProjektow"></ul>
+</div>
 
 <script>
 
-const form = document.getElementById('projektForm');
-const lista = document.getElementById('listaProjektow');
+function loadProjects(){
+let projects = JSON.parse(localStorage.getItem("projekty")) || [];
+let container = document.getElementById("projects");
+container.innerHTML="";
 
-function wyswietl(){
-lista.innerHTML="";
-const projekty = JSON.parse(localStorage.getItem('projekty')) || [];
-
-projekty.forEach(p=>{
-const li=document.createElement("li");
-li.innerHTML=`<b>${p.nazwa}</b> (${p.imie}) - ${p.opis}`;
-lista.appendChild(li);
+projects.forEach(p=>{
+container.innerHTML+=`
+<div class="project">
+<b>${p.name}</b><br>
+${p.desc}<br>
+<a class="download" href="${p.file}" download>Pobierz plik</a>
+</div>
+`;
 });
 }
 
-wyswietl();
+function addProject(){
 
-form.addEventListener("submit",function(e){
+let name=document.getElementById("name").value;
+let desc=document.getElementById("desc").value;
+let file=document.getElementById("file").files[0];
 
-e.preventDefault();
+if(!file){
+alert("Dodaj plik projektu!");
+return;
+}
 
-const imie=document.getElementById("imie").value;
-const nazwa=document.getElementById("nazwa").value;
-const opis=document.getElementById("opis").value;
+let reader=new FileReader();
 
-const projekty = JSON.parse(localStorage.getItem('projekty')) || [];
+reader.onload=function(e){
 
-projekty.push({imie,nazwa,opis});
+let projects = JSON.parse(localStorage.getItem("projekty")) || [];
 
-localStorage.setItem("projekty",JSON.stringify(projekty));
-
-wyswietl();
-
-form.reset();
-
+projects.push({
+name:name,
+desc:desc,
+file:e.target.result
 });
+
+localStorage.setItem("projekty",JSON.stringify(projects));
+
+loadProjects();
+};
+
+reader.readAsDataURL(file);
+}
+
+loadProjects();
 
 </script>
 
