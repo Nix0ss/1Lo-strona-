@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 <meta charset="UTF-8">
 <title>Projekty uczniów</title>
@@ -9,67 +10,24 @@
 
 <h1>Projekty uczniów – drukarka 3D</h1>
 
-<form id="projektForm">
+<form>
 
 Imię ucznia:<br>
-<input type="text" id="imie"><br><br>
+<input type="text"><br><br>
 
 Nazwa projektu:<br>
-<input type="text" id="nazwa"><br><br>
+<input type="text"><br><br>
 
 Plik STL:<br>
-<input type="file" id="plik"><br><br>
+<input type="file"><br><br>
 
 Opis projektu:<br>
-<textarea id="opis"></textarea><br><br>
+<textarea rows="4"></textarea><br><br>
 
-<button type="submit">Dodaj projekt</button>
+<button>Dodaj projekt</button>
 
 </form>
 
-<h2>Lista projektów</h2>
-
-<ul id="listaProjektow"></ul>
-
-<script>
-
-const form = document.getElementById('projektForm');
-const lista = document.getElementById('listaProjektow');
-
-function wyswietl(){
-lista.innerHTML="";
-const projekty = JSON.parse(localStorage.getItem('projekty')) || [];
-
-projekty.forEach(p=>{
-const li=document.createElement("li");
-li.innerHTML=`<b>${p.nazwa}</b> (${p.imie}) - ${p.opis}`;
-lista.appendChild(li);
-});
-}
-
-wyswietl();
-
-form.addEventListener("submit",function(e){
-
-e.preventDefault();
-
-const imie=document.getElementById("imie").value;
-const nazwa=document.getElementById("nazwa").value;
-const opis=document.getElementById("opis").value;
-
-const projekty = JSON.parse(localStorage.getItem('projekty')) || [];
-
-projekty.push({imie,nazwa,opis});
-
-localStorage.setItem("projekty",JSON.stringify(projekty));
-
-wyswietl();
-
-form.reset();
-
-});
-
-</script>
-
 </body>
+
 </html>
