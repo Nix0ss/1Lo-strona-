@@ -155,6 +155,81 @@ reader.readAsDataURL(file);
 loadProjects();
 
 </script>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDEPt7u92MXcvGHpAGFZ6g6TmtpZeU0_8s",
+  authDomain: "lo-strona.firebaseapp.com",
+  projectId: "lo-strona",
+  storageBucket: "lo-strona.firebasestorage.app",
+  messagingSenderId: "1052786725625",
+  appId: "1:1052786725625:web:cd2d9c019c8dd015ed4828"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const form = document.getElementById("projectForm");
+const projectList = document.getElementById("projectList");
+
+form.addEventListener("submit", async (e) => {
+e.preventDefault();
+
+const name = document.getElementById("name").value;
+const desc = document.getElementById("desc").value;
+const file = document.getElementById("file").files[0];
+
+const reader = new FileReader();
+
+reader.onload = async function() {
+
+await addDoc(collection(db, "projekty"), {
+name: name,
+desc: desc,
+file: reader.result
+});
+
+alert("Projekt dodany!");
+
+loadProjects();
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+async function loadProjects() {
+
+projectList.innerHTML = "";
+
+const querySnapshot = await getDocs(collection(db, "projekty"));
+
+querySnapshot.forEach((doc) => {
+
+const data = doc.data();
+
+const div = document.createElement("div");
+
+div.innerHTML = `
+<h3>${data.name}</h3>
+<p>${data.desc}</p>
+<a href="${data.file}" download>Pobierz projekt</a>
+<hr>
+`;
+
+projectList.appendChild(div);
+
+});
+
+}
+
+loadProjects();
+
+</script>
 
 </body>
 </html>
