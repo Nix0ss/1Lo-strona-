@@ -2,40 +2,43 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Projekty uczniów – Drukarka 3D</title>
+<title>Projekty uczniów</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+
 body{
-font-family: Arial, sans-serif;
-background:#f4f6f9;
+font-family:Arial;
+background:#f4f4f4;
 margin:0;
 }
 
 .header{
 background:#1d4ed8;
 color:white;
-padding:20px;
+padding:25px;
 text-align:center;
 }
 
 .container{
 max-width:900px;
 margin:auto;
-padding:30px;
+padding:20px;
 }
 
 .card{
 background:white;
-padding:25px;
+padding:20px;
 border-radius:10px;
-box-shadow:0 5px 15px rgba(0,0,0,0.1);
-margin-bottom:30px;
+margin-bottom:20px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
 }
 
-input, textarea{
+input,textarea{
 width:100%;
-padding:10px;
-margin-top:8px;
+padding:12px;
+margin-top:10px;
 margin-bottom:15px;
 border:1px solid #ccc;
 border-radius:6px;
@@ -45,7 +48,7 @@ button{
 background:#1d4ed8;
 color:white;
 border:none;
-padding:10px 20px;
+padding:12px 20px;
 border-radius:6px;
 cursor:pointer;
 }
@@ -55,23 +58,29 @@ background:#163ea8;
 }
 
 .project{
-border-bottom:1px solid #eee;
-padding:10px 0;
+border-bottom:1px solid #ddd;
+padding:15px 0;
 }
 
 .download{
 color:#1d4ed8;
-text-decoration:none;
 font-weight:bold;
+text-decoration:none;
 }
+
+.status{
+color:orange;
+font-size:14px;
+}
+
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<h1>Projekty uczniów – Drukarka 3D</h1>
-<p>Dodaj swój projekt do szkolnej drukarki 3D</p>
+<h1>Projekty uczniów</h1>
+<p>Dodaj projekt do szkolnej drukarki 3D</p>
 </div>
 
 <div class="container">
@@ -80,98 +89,130 @@ font-weight:bold;
 
 <h2>Dodaj projekt</h2>
 
-<input id="name" placeholder="Nazwa projektu">
+<input type="text" id="name" placeholder="Nazwa projektu">
+
 <textarea id="desc" placeholder="Opis projektu"></textarea>
+
 <input type="file" id="file">
 
-<button id="addProjectBtn">Dodaj projekt</button>
+<button onclick="uploadProject()">
+Wyślij projekt
+</button>
+
+<p class="status">
+Projekt musi zostać zaakceptowany przez administratora.
+</p>
 
 </div>
 
 <div class="card">
 
-<h2>Lista projektów</h2>
+<h2>Zaakceptowane projekty</h2>
 
-<div id="projectList"></div>
-
-</div>
+<div id="projects"></div>
 
 </div>
 
-<script type="module">
+</div>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<script>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDEPt7u92MXcvGHpAGFZ6g6TmtpZeU0_8s",
-  authDomain: "lo-strona.firebaseapp.com",
-  projectId: "lo-strona",
-  storageBucket: "lo-strona.firebasestorage.app",
-  messagingSenderId: "1052786725625",
-  appId: "1:1052786725625:web:cd2d9c019c8dd015ed4828"
-};
+const supabaseUrl = 'https://gieetlvcdxrhonmgdexn.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZWV0bHZjZHhyaG9ubWdkZXhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMDE4NzMsImV4cCI6MjA5NDg3Nzg3M30.sx66Pi3bRuUNZk0sy82khaXa53B6zbKyJrdUY8KW9F4'
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
 
-const button = document.getElementById("addProjectBtn");
-const projectList = document.getElementById("projectList");
+async function uploadProject(){
 
-button.addEventListener("click", async () => {
-
-const name = document.getElementById("name").value;
-const desc = document.getElementById("desc").value;
-const file = document.getElementById("file").files[0];
+const name = document.getElementById("name").value
+const desc = document.getElementById("desc").value
+const file = document.getElementById("file").files[0]
 
 if(!file){
-alert("Dodaj plik projektu!");
-return;
+alert("Dodaj plik")
+return
 }
 
-const reader = new FileReader();
+const fileName = Date.now() + "_" + file.name
 
-reader.onload = async function(){
+const { error: uploadError } = await supabase.storage
+.from('projekty')
+.upload(fileName, file)
 
-await addDoc(collection(db,"projekty"),{
+if(uploadError){
+alert("Błąd uploadu")
+console.log(uploadError)
+return
+}
+
+const fileUrl = supabase.storage
+.from('projekty')
+.getPublicUrl(fileName).data.publicUrl
+
+const { error } = await supabase
+.from('projekty')
+.insert([{
 name:name,
 desc:desc,
-file:reader.result
-});
+file_url:fileUrl,
+approved:false
+}])
 
-alert("Projekt zapisany!");
+if(error){
+alert("Błąd zapisu")
+console.log(error)
+return
+}
 
-loadProjects();
+alert("Projekt wysłany!")
 
-};
+loadProjects()
 
-reader.readAsDataURL(file);
-
-});
+}
 
 async function loadProjects(){
 
-projectList.innerHTML="";
+const projectsDiv = document.getElementById("projects")
 
-const querySnapshot = await getDocs(collection(db,"projekty"));
+projectsDiv.innerHTML = ""
 
-querySnapshot.forEach((doc)=>{
+const { data, error } = await supabase
+.from('projekty')
+.select('*')
+.eq('approved', true)
 
-const data = doc.data();
+if(error){
+console.log(error)
+return
+}
 
-projectList.innerHTML+=`
+data.forEach(project=>{
+
+projectsDiv.innerHTML += `
+
 <div class="project">
-<b>${data.name}</b><br>
-${data.desc}<br>
-<a class="download" href="${data.file}" download>Pobierz plik</a>
-</div>
-`;
 
-});
+<h3>${project.name}</h3>
+
+<p>${project.desc}</p>
+
+<a class="download"
+href="${project.file_url}"
+download>
+
+Pobierz projekt
+
+</a>
+
+</div>
+
+`
+
+})
 
 }
 
-loadProjects();
+loadProjects()
 
 </script>
 
