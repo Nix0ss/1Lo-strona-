@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Panel administratora</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+button{
+padding:10px 20px;
+margin-top:10px;
+cursor:pointer;
+border:none;
+background:#1d4ed8;
+color:white;
+border-radius:6px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Panel administratora</h1>
+
+<div id="adminProjects"></div>
+
+<script>
+
+const supabaseUrl = 'https://gieetlvcdxrhonmgdexn.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZWV0bHZjZHhyaG9ubWdkZXhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMDE4NzMsImV4cCI6MjA5NDg3Nzg3M30.sx66Pi3bRuUNZk0sy82khaXa53B6zbKyJrdUY8KW9F4'
+
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+
+async function loadAdminProjects(){
+
+const adminDiv = document.getElementById("adminProjects")
+
+adminDiv.innerHTML = ""
+
+const { data, error } = await supabase
+.from('projekty')
+.select('*')
+.eq('approved', false)
+
+if(error){
+console.log(error)
+return
+}
+
+data.forEach(project=>{
+
+adminDiv.innerHTML += `
+
+<div class="card">
+
+<h2>${project.name}</h2>
+
+<p>${project.desc}</p>
+
+<a href="${project.file_url}" target="_blank">
+Pobierz projekt
+</a>
+
+<br><br>
+
+<button onclick="approveProject(${project.id})">
+Zatwierdź
+</button>
+
+</div>
+
+`
+
+})
+
+}
+
+async function approveProject(id){
+
+await supabase
+.from('projekty')
+.update({approved:true})
+.eq('id',id)
+
+loadAdminProjects()
+
+}
+
+loadAdminProjects()
+
+</script>
+
+</body>
+</html>
