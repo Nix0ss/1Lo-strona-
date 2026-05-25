@@ -2,75 +2,113 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Projekty uczniów</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Projekty uczniów</title>
 
 <style>
 
 body{
-font-family:Arial;
-background:#f4f4f4;
 margin:0;
+font-family:Arial;
+background:#0f172a;
+color:white;
 }
 
 .header{
-background:#1d4ed8;
-color:white;
-padding:25px;
+padding:40px;
 text-align:center;
+background:linear-gradient(135deg,#2563eb,#7c3aed);
+}
+
+.header h1{
+margin:0;
+font-size:42px;
 }
 
 .container{
-max-width:900px;
+max-width:1100px;
 margin:auto;
-padding:20px;
+padding:30px;
 }
 
 .card{
-background:white;
-padding:20px;
-border-radius:10px;
-margin-bottom:20px;
-box-shadow:0 0 10px rgba(0,0,0,0.1);
+background:#1e293b;
+padding:25px;
+border-radius:18px;
+margin-bottom:30px;
+box-shadow:0 10px 30px rgba(0,0,0,0.3);
 }
 
-input,textarea{
+input, textarea{
 width:100%;
-padding:12px;
+padding:14px;
 margin-top:10px;
-margin-bottom:15px;
-border:1px solid #ccc;
-border-radius:6px;
+margin-bottom:18px;
+border:none;
+border-radius:10px;
+background:#334155;
+color:white;
+font-size:15px;
+box-sizing:border-box;
 }
 
 button{
-background:#1d4ed8;
+background:#2563eb;
 color:white;
 border:none;
-padding:12px 20px;
-border-radius:6px;
+padding:14px 24px;
+border-radius:10px;
+font-size:15px;
 cursor:pointer;
+transition:0.2s;
 }
 
 button:hover{
-background:#163ea8;
+transform:scale(1.03);
+background:#3b82f6;
 }
 
 .project{
-border-bottom:1px solid #ddd;
-padding:15px 0;
+background:#334155;
+padding:20px;
+border-radius:14px;
+margin-bottom:15px;
+}
+
+.project h3{
+margin-top:0;
 }
 
 .download{
-color:#1d4ed8;
-font-weight:bold;
+display:inline-block;
+margin-top:10px;
+background:#22c55e;
+padding:10px 16px;
+border-radius:8px;
 text-decoration:none;
+color:white;
+font-weight:bold;
 }
 
 .status{
-color:orange;
-font-size:14px;
+display:inline-block;
+padding:6px 12px;
+border-radius:20px;
+font-size:13px;
+margin-top:10px;
+}
+
+.pending{
+background:#f59e0b;
+}
+
+.approved{
+background:#22c55e;
+}
+
+.admin{
+margin-top:10px;
 }
 
 </style>
@@ -80,7 +118,7 @@ font-size:14px;
 
 <div class="header">
 <h1>Projekty uczniów</h1>
-<p>Dodaj projekt do szkolnej drukarki 3D</p>
+<p>Wyślij projekt do szkolnej drukarki 3D</p>
 </div>
 
 <div class="container">
@@ -95,19 +133,13 @@ font-size:14px;
 
 <input type="file" id="file">
 
-<button onclick="uploadProject()">
-Wyślij projekt
-</button>
-
-<p class="status">
-Projekt musi zostać zaakceptowany przez administratora.
-</p>
+<button onclick="addProject()">Wyślij projekt</button>
 
 </div>
 
 <div class="card">
 
-<h2>Zaakceptowane projekty</h2>
+<h2>Publiczne projekty</h2>
 
 <div id="projects"></div>
 
@@ -115,39 +147,78 @@ Projekt musi zostać zaakceptowany przez administratora.
 
 </div>
 
-<script>
+<script type="module">
+
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
 const supabaseUrl = 'https://gieetlvcdxrhonmgdexn.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZWV0bHZjZHhyaG9ubWdkZXhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMDE4NzMsImV4cCI6MjA5NDg3Nzg3M30.sx66Pi3bRuUNZk0sy82khaXa53B6zbKyJrdUY8KW9F4'
 
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+const supabaseKey = 'TU_WKLEJ_ANON_PUBLIC'
 
-async function uploadProject(){
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+async function loadProjects(){
+
+const { data, error } = await supabase
+.from('projekty')
+.select('*')
+.eq('approved', true)
+.order('id', { ascending:false })
+
+const container = document.getElementById("projects")
+
+container.innerHTML=""
+
+data.forEach(project=>{
+
+container.innerHTML += `
+<div class="project">
+
+<h3>${project.name}</h3>
+
+<p>${project.desc}</p>
+
+<div class="status approved">
+Zaakceptowany
+</div>
+
+<br>
+
+<a class="download" href="${project.file_url}" target="_blank">
+Pobierz projekt
+</a>
+
+</div>
+`
+
+})
+
+}
+
+window.addProject = async function(){
 
 const name = document.getElementById("name").value
 const desc = document.getElementById("desc").value
 const file = document.getElementById("file").files[0]
 
-if(!file){
-alert("Dodaj plik")
+if(!name || !desc || !file){
+alert("Uzupełnij wszystkie pola")
 return
 }
 
 const fileName = Date.now() + "_" + file.name
 
-const { error: uploadError } = await supabase.storage
+const { data:fileData, error:fileError } = await supabase.storage
 .from('projekty')
 .upload(fileName, file)
 
-if(uploadError){
-alert("Błąd uploadu")
-console.log(uploadError)
+if(fileError){
+alert("Błąd uploadu pliku")
+console.log(fileError)
 return
 }
 
-const fileUrl = supabase.storage
-.from('projekty')
-.getPublicUrl(fileName).data.publicUrl
+const fileUrl = `https://gieetlvcdxrhonmgdexn.supabase.co/storage/v1/object/public/projekty/${fileName}`
 
 const { error } = await supabase
 .from('projekty')
@@ -164,51 +235,11 @@ console.log(error)
 return
 }
 
-alert("Projekt wysłany!")
+alert("Projekt wysłany do akceptacji!")
 
-loadProjects()
-
-}
-
-async function loadProjects(){
-
-const projectsDiv = document.getElementById("projects")
-
-projectsDiv.innerHTML = ""
-
-const { data, error } = await supabase
-.from('projekty')
-.select('*')
-.eq('approved', true)
-
-if(error){
-console.log(error)
-return
-}
-
-data.forEach(project=>{
-
-projectsDiv.innerHTML += `
-
-<div class="project">
-
-<h3>${project.name}</h3>
-
-<p>${project.desc}</p>
-
-<a class="download"
-href="${project.file_url}"
-download>
-
-Pobierz projekt
-
-</a>
-
-</div>
-
-`
-
-})
+document.getElementById("name").value=""
+document.getElementById("desc").value=""
+document.getElementById("file").value=""
 
 }
 
